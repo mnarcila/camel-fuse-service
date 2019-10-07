@@ -1,0 +1,22 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1570327174556
+Build-Jdk: 1.8.0_201
+Built-By: Administrador
+Bundle-Blueprint: OSGI-INF/blueprint/camel-blueprint.xml
+Bundle-Description: Camel AMQ Example using Blueprint
+Bundle-ManifestVersion: 2
+Bundle-Name: Camel AMQ Example using Blueprint [MQ]
+Bundle-SymbolicName: MQ
+Bundle-Version: 1.0.0.SNAPSHOT
+Created-By: Apache Maven Bundle Plugin
+Export-Package: co.com.pica.kalsonys;version="1.0.0";uses:="javax.jws,ja
+ vax.jws.soap,javax.xml.bind,javax.xml.bind.annotation,javax.xml.namespa
+ ce,javax.xml.ws",com.mycompany.templates.camel.activemq;version="1.0.0"
+ ;uses:="org.apache.camel"
+Import-Package: javax.jws,javax.jws.soap,javax.xml.bind,javax.xml.bind.a
+ nnotation,javax.xml.namespace,javax.xml.ws,org.apache.activemq.camel.co
+ mponent;version="[5.11,6)",org.apache.camel;version="[2.17,3)",org.apac
+ he.camel.spi;version="[2.17,3)",org.osgi.service.blueprint;version="[1.
+ 0.0,2.0.0)"
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"
+Tool: Bnd-3.2.0.201605172007

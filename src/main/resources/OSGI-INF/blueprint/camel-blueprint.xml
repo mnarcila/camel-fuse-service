@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- <blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0" -->
+<!-- xmlns:cm="http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.0.0" -->
+<!-- xmlns:ext="http://aries.apache.org/blueprint/xmlns/blueprint-ext/v1.0.0" -->
+<!-- xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" 
+	http://www.osgi.org/xmlns/blueprint/v1.0.0 https://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd"> -->
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:camel="http://camel.apache.org/schema/blueprint" xmlns:camelcxf="http://camel.apache.org/schema/blueprint/cxf"
+	xmlns:cm="http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.0.0"
+	xmlns:cxf="http://cxf.apache.org/blueprint/core" xmlns:jaxws="http://cxf.apache.org/blueprint/jaxws"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="              http://www.osgi.org/xmlns/blueprint/v1.0.0 https://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd              http://cxf.apache.org/blueprint/jaxws http://cxf.apache.org/schemas/blueprint/jaxws.xsd              http://cxf.apache.org/blueprint/core http://cxf.apache.org/schemas/blueprint/core.xsd              ">
+	<cm:property-placeholder id="camel.activemq.blueprint"
+		persistent-id="camel.activemq.blueprint">
+		<cm:default-properties>
+			<cm:property name="broker.url" value="vm://amq?broker.persistent=false" />
+			<cm:property name="broker.username" value="" />
+			<cm:property name="broker.password" value="" />
+		</cm:default-properties>
+	</cm:property-placeholder>
+	<bean class="com.mycompany.templates.camel.activemq.OrderGenerator"
+		id="orderGenerator" />
+	<!-- Lets connect the Camel ActiveMQ component to the broker. -->
+	<bean class="org.apache.activemq.camel.component.ActiveMQComponent"
+		id="activemq">
+		<property name="brokerURL" value="tcp://localhost:61617" />
+		<property name="userName" value="admin" />
+		<property name="password" value="admin" />
+		<property name="usePooledConnection" value="false" />
+	</bean>
+	<camelcxf:cxfEndpoint
+		address="http://localhost:8281/OrdenKalsonys/envioOrdenes"
+		endpointName="s:OrdenBinding" id="kalSonysservice" serviceName="s:OrdenEndpointService"
+		wsdlURL="wsdl/envioOrdenKalsonys.wsdl" xmlns:s="http://Kalsonys.pica.com.co" />
+	<camelContext id="amq-example-context"
+		xmlns="http://camel.apache.org/schema/blueprint" xmlns:order="http://com.mycompany/examples/order">
+
+		<route id="getWebServiceKallSonys" streamCache="true">
+			<from id="_from2" uri="cxf:bean:kalSonysservice?dataFormat=MESSAGE" />
+			<log id="_logWsdl" message="${body}" />
+			<to id="enviarLog" uri="direct:imprimir"></to>
+			<to id="wsdltoSpplitter" uri="direct:splitterMensaje"></to>
+			<setHeader headerName="hrd_file" id="hdr_009">
+				<simple>resource:classpath:/xmlResponse/response.xml</simple>
+			</setHeader>
+			<setHeader headerName="hrd_count" id="hdr_008">
+				<xpath resultType="java.lang.String">count(//mensajeEntrada/ordenes/orden)</xpath>
+			</setHeader>
+			<log id="log_0023" message="cantidad: ${header.hrd_count}" />
+			<setBody >
+			<simple id="simple_0023"> ${header.hrd_file.replaceAll("regs",${header.hrd_count} )} </simple>
+			</setBody>
+			<to id="end" uri="mock:end" />
+		</route>
+		<route id="imprimeLog">
+			<from id="imprimeLogFrom" uri="direct:imprimir" /> 
+			<to id="imprimeArchivo" uri="file:c:/proveedor/Logs?fileName=${date:now:yyyyMMddHHmmss}.log" ></to>
+		</route>
+		<route id="cbr-route">
+			<from id="_from1" uri="file:c://work/cbr/input" />
+			<!-- <to id="cll_log" uri="activemq:logs" > -->
+			<!-- <setBody> -->
+			<!-- <simple>incio proceso ${file:name}</simple> -->
+			<!-- </setBody> </to> -->
+			<log id="_log1" message="Receiving order ${file:name}" />
+			<log id="_log5" message="Done processing ${file:name}" />
+			<to id="enviarLog2" uri="direct:imprimir"></to>
+			<to id="aprocesararchivo" uri="direct:splitterMensaje" />
+		</route>
+
+		<route id="splitterTo">
+			<from id="splitter" uri="direct:splitterMensaje" />
+			<split id="_split1">
+				<xpath>//mensajeEntrada/ordenes/orden</xpath>
+				<to id="toProcesarMensaje" uri="direct:procesarMensaje" />
+			</split>
+		</route>
+		<route id="procesarMensaje">
+			<from id="validarPais" uri="direct:procesarMensaje" />
+			<log id="logPr1" message="${body}" />
+			<log id="logPr1" message="Entro a proces" />
+			<setHeader headerName="id" id="_setHeader1">
+				<xpath resultType="java.lang.String">//orden/pais/text()</xpath>
+			</setHeader>
+			<log id="_log2" message="Routed ${header.id} to Test queue" />
+			<choice id="seleccionPais">
+				<when id="colombia">
+					<xpath id="_xpath1">//orden/pais/text()= 'CO'</xpath>
+					<!-- <xpath id="_xpath1">/kal:mensajeEntrada/kal:ordenes/kal:orden/kal:pais 
+						= 'CO'</xpath> -->
+					<log id="logCO" message="Registro a colombia  ${file:name} " />
+					<to id="to_enviarColombia" uri="direct:enviarColombia" />
+				</when>
+				<otherwise id="_otherwise1">
+					<log id="logPr1" message="Se fue por otherwise" />
+					<to id="to_enviarColombia" uri="activemq:dhl" />
+				</otherwise>
+			</choice>
+		</route>
+		<route id="rt_enviarColombia">
+			<from id="enviarColombia" uri="direct:enviarColombia" />
+			<choice id="seleccionProveedorColombia">
+				<when id="sony">
+					<xpath id="_xpath2">//orden/proveedorHotel/text() = 'SONY'</xpath>
+					<log id="logSony" message="Registro a Sony-colombia  ${file:name} " />
+					<to id="to_enviarDeprisa" uri="activemq:deprisa" />
+				</when>
+				<otherwise id="servientrega">
+					<log id="logServientrega" message="Registro a servientrega-colombia  ${file:name} " />
+					<to id="to_enviarServientrega" uri="activemq:servientrega" />
+				</otherwise>
+			</choice>
+		</route>
+		<!-- camino de envio deprisa a mq -->
+		<route id="rt_enviarDeprisa" streamCache="true">
+			<from id="enviarDeprisa" uri="activemq:deprisa" />
+			<setHeader headerName="idOrden" id="_setHeader2">
+				<xpath resultType="java.lang.String">//orden/ordenId/text()</xpath>
+			</setHeader>
+			<setHeader headerName="nombreApellido" id="_setHeader3">
+				<xpath resultType="java.lang.String">//orden/nombreApellido/text()</xpath>
+			</setHeader>
+			<setHeader headerName="direccion" id="_setHeader4">
+				<xpath resultType="java.lang.String">//orden/direccion/text()</xpath>
+			</setHeader>
+			<setHeader headerName="ciudad" id="_setHeader5">
+				<xpath resultType="java.lang.String">//orden/ciudad/text()</xpath>
+			</setHeader>
+			<setHeader headerName="pais" id="_setHeader6">
+				<xpath resultType="java.lang.String">//orden/pais/text()</xpath>
+			</setHeader>
+			<setHeader headerName="proveedorHotel" id="_setHeader7">
+				<xpath resultType="java.lang.String">//orden/proveedorHotel/text()</xpath>
+			</setHeader>
+			<log id="logDeprisa" message="Registro a deprisa  ${file:name} " />
+			<setBody id="_setBody1">
+				<simple>${header.idOrden},${header.nombreApellido},${header.direccion},${header.ciudad},${header.pais},${header.proveedorHotel}</simple>
+			</setBody>
+			<to id="outputDeprisa"
+				uri="file:c:/proveedor/deprisa?fileName=Deprisa_${header.idOrden}_${date:now:yyyyMMddHHmmss}.csv" />
+		</route>
+		<!-- camino de envio Servientrega a mq -->
+		<route id="rt_enviarServientrega" streamCache="true">
+			<from id="enviarServientrega" uri="activemq:servientrega" />
+			<setHeader headerName="idOrden" id="_setHeader8">
+				<xpath resultType="java.lang.String">//orden/ordenId/text()</xpath>
+			</setHeader>
+			<log id="logServientregaMq" message="Registro a Servientrega  ${file:name} " />
+			<to id="outputServientrega"
+				uri="file:c:/proveedor/servientrega?fileName=${header.idOrden}_${date:now:yyyyMMddHHmmss}.xml" />
+		</route>
+		<!-- camino de envio dhl a mq -->
+		<route id="rt_enviarDhlMq" streamCache="true">
+			<from id="enviarDhlMq" uri="activemq:dhl" />
+			<setHeader headerName="idOrden" id="_setHeader9">
+				<xpath resultType="java.lang.String">//orden/ordenId/text()</xpath>
+			</setHeader>
+			<log id="logDhlMq" message="Registro a DHL  ${file:name} " />
+			<to id="outputDhlMq"
+				uri="file:c:/proveedor/dhl/?fileName=${header.idOrden}/${date:now:yyyyMMddHHmmss}.xml" />
+		</route>
+	</camelContext>
+</blueprint>

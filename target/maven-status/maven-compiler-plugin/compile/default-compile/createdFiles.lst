@@ -1,0 +1,9 @@
+com\mycompany\templates\camel\activemq\OrderGenerator.class
+co\com\pica\kalsonys\OrderEndpoint.class
+co\com\pica\kalsonys\package-info.class
+co\com\pica\kalsonys\OrdenEndpointService.class
+co\com\pica\kalsonys\MensajeSalida.class
+co\com\pica\kalsonys\ObjectFactory.class
+co\com\pica\kalsonys\MEntrada.class
+co\com\pica\kalsonys\OrdesList.class
+co\com\pica\kalsonys\OrdenInfo.class

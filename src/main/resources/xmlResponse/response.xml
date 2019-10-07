@@ -1,0 +1,6 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:dhl="http://dhl.com.co/DHLShipmentService">
+   <soapenv:Header/>
+   <soapenv:Body>
+     <respuesta> Se recibieron las regs ordenes que seran procesadas </respuesta>
+   </soapenv:Body>
+</soapenv:Envelope>

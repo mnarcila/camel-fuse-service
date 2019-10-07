@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+	xmlns:tns="http://Kalsonys.pica.com.co"
+	xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	xmlns:http="http://schemas.xmlsoap.org/wsdl/http/"
+	xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+	targetNamespace="http://Kalsonys.pica.com.co">
+
+  <!-- Type definitions for input- and output parameters for webservice -->
+  <wsdl:types>
+    <xs:schema targetNamespace="http://Kalsonys.pica.com.co">
+        <xs:complexType name="ordenInfo">
+					<xs:sequence>
+						      <xs:element type="xs:string" name="ordenId" />
+						      <xs:element type="xs:string" name="nombreApellido" />
+						      <xs:element type="xs:string" name="direccion" />
+						      <xs:element type="xs:string" name="ciudad" />
+						      <xs:element type="xs:string" name="pais" />
+						      <xs:element type="xs:string" name="proveedorHotel" />
+					</xs:sequence>
+				</xs:complexType>
+        
+        <xs:element name="orden" type="tns:ordenInfo">
+		</xs:element>
+		
+			<xs:complexType name="ordesList">
+				<xs:sequence>
+					<xs:element ref="tns:orden"  maxOccurs="unbounded" minOccurs="1"></xs:element>
+				</xs:sequence>
+			</xs:complexType>	
+		<xs:element name="ordenes" type="tns:ordesList">		
+		</xs:element>
+			
+			<xs:element name="mensajeSalida">
+				<xs:complexType>
+					<xs:sequence>
+					      <xs:element type="xs:string" name="resultado" />
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+
+
+			<xs:complexType name="mEntrada">
+				<xs:sequence>
+					<xs:element ref="tns:ordenes"  maxOccurs="1" minOccurs="1"></xs:element>
+				</xs:sequence>
+			</xs:complexType>
+			
+			<xs:element name="mensajeEntrada"  type="tns:mEntrada">
+					
+			</xs:element>
+			
+
+					
+    </xs:schema>
+  </wsdl:types>
+
+  <!-- Message definitions for input and output -->
+  <wsdl:message name="envioOrdenes">
+		<wsdl:part name="in" element="tns:mensajeEntrada" />
+  </wsdl:message>
+  <wsdl:message name="ordenResult">
+	<wsdl:part name="out" element="tns:mensajeSalida" />
+  </wsdl:message>
+
+  <!-- Port (interface) definitions -->
+  <wsdl:portType name="OrderEndpoint">
+    <wsdl:operation name="enviarOrden">
+      <wsdl:input message="tns:envioOrdenes" />
+      <wsdl:output message="tns:ordenResult" />
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <!-- Port bindings to transports and encoding - HTTP, document literal encoding is used -->
+  <wsdl:binding name="OrdenBinding" type="tns:OrderEndpoint">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="enviarOrden">
+      <soap:operation soapAction="" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <!-- Service definition -->
+  <wsdl:service name="OrdenEndpointService">
+    <wsdl:port name="OrdenBinding" binding="tns:OrdenBinding">
+      <soap:address location="http://localhost:9101/order" />
+    </wsdl:port>
+  </wsdl:service>
+
+</wsdl:definitions>
